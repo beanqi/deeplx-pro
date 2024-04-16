@@ -1,6 +1,7 @@
 const axios = require('axios').default;
 const express = require('express');
 const bodyParser = require('body-parser');
+const { initBalance, checkBalance, deductBalance } = require('./filter');
 
 const DEEPL_BASE_URL = 'https://api.deepl.com/jsonrpc';
 const app = express();
@@ -117,8 +118,13 @@ app.get('/', (req, res) => {
   res.send('Welcome to deeplx-pro');
 });
 
-app.post('/translate', async (req, res) => {
+app.post('/translate/:key', async (req, res) => {
   const { text, source_lang, target_lang } = req.body;
+  const { key } = req.params;
+  if (!checkBalance(key, text)) {
+    res.status(402).json({ error: 'Insufficient balance' });
+  }
+  deductBalance(key, text.length);
   try {
     const result = await translate(text, source_lang, target_lang);
     if (!result) {
@@ -138,6 +144,22 @@ app.post('/translate', async (req, res) => {
     res.status(500).json({ error: 'Translation failed' });
   }
 });
+
+app.get("/addkey", async (req, res) => {
+  const { key } = req.query;
+  const { balance } = req.query;
+  if (!key) {
+    res.status(400).json({ error: "Missing key" });
+    return;
+  }
+  if (!balance) {
+    res.status(400).json({ error: "Missing balance" });
+    return;
+  }
+  initBalance(key, balance);
+  cookiesCount = cookies.length;
+  res.json({ message: "Key added successfully" });
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
