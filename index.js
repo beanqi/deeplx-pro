@@ -6,6 +6,7 @@ import { initBalance, checkBalance, deductBalance } from './filter.js';
 const DEEPL_BASE_URL = 'https://api.deepl.com/jsonrpc';
 const app = express();
 const PORT = process.env.PORT || 9000;
+const SECRET = process.env.SECRET || 'secret';
 
 // Cookies storage
 let cookies = process.env.DEEPL_COOKIES ? process.env.DEEPL_COOKIES.split(',') : ['95d84682-f9ac-4b15-b7e5-3dd495de1eb7'];
@@ -151,20 +152,30 @@ app.post('/translate/:key', async (req, res) => {
 });
 
 app.get("/addkey", async (req, res) => {
-  const { key } = req.query;
-  const { balance } = req.query;
+  // Extract the Bearer token from the Authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: "Unauthorized access: No token provided" });
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (token !== SECRET) {
+    return res.status(403).json({ error: "Unauthorized access: Invalid token" });
+  }
+
+  const { key, balance } = req.query;
   if (!key) {
-    res.status(400).json({ error: "Missing key" });
-    return;
+    return res.status(400).json({ error: "Missing key" });
   }
   if (!balance) {
-    res.status(400).json({ error: "Missing balance" });
-    return;
+    return res.status(400).json({ error: "Missing balance" });
   }
+
+  // Initialize the balance using the function from 'filter.js'
   initBalance(key, balance);
-  cookiesCount = cookies.length;
+  cookiesCount = cookies.length; // Update the cookies count
   res.json({ message: "Key added successfully" });
-})
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
