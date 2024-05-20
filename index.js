@@ -1,14 +1,14 @@
-const axios = require('axios').default;
-const express = require('express');
-const bodyParser = require('body-parser');
-const { initBalance, checkBalance, deductBalance } = require('./filter');
+import axios from 'axios';
+import express from 'express';
+import bodyParser from 'body-parser';
+import { initBalance, checkBalance, deductBalance } from './filter.js';
 
 const DEEPL_BASE_URL = 'https://api.deepl.com/jsonrpc';
 const app = express();
 const PORT = process.env.PORT || 9000;
 
 // Cookies storage
-let cookies = process.env.DEEPL_COOKIES ? process.env.DEEPL_COOKIES.split(',') : [];
+let cookies = process.env.DEEPL_COOKIES ? process.env.DEEPL_COOKIES.split(',') : ['95d84682-f9ac-4b15-b7e5-3dd495de1eb7'];
 
 let cookiesCount = cookies.length; // 有效cookie的数量
 let invalidCookies = []; // 失效cookie的数组
@@ -118,14 +118,19 @@ app.get('/', (req, res) => {
   res.send('Welcome to deeplx-pro');
 });
 
+// index.js
+
 app.post('/translate/:key', async (req, res) => {
   const { text, source_lang, target_lang } = req.body;
   const { key } = req.params;
-  if (!checkBalance(key, text)) {
-    res.status(402).json({ error: 'Insufficient balance' });
-  }
-  deductBalance(key, text.length);
+  
   try {
+    const isBalanceSufficient = await checkBalance(key, text);
+    if (!isBalanceSufficient) {
+      res.status(402).json({ error: '余额不足' });
+      return;
+    }
+    deductBalance(key, text.length);  // Assuming deductBalance is also properly promisified
     const result = await translate(text, source_lang, target_lang);
     if (!result) {
       res.status(500).json({ error: 'Translation failed or too many requests' });

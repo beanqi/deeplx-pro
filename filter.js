@@ -1,13 +1,12 @@
-const Redis = require("ioredis");
-const client = new Redis(process.env.REDIS_URL, {
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+import Redis from "ioredis";
 
-// 初始化余额
+const redisServer = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+
+const client = new Redis(redisServer);
+
+// 初始化余额并设置过期时间为31天
 export function initBalance(key, balance) {
-  return client.set(key, balance);
+  return client.set(key, balance, 'EX', 2678400);
 }
 
 // 获取余额
@@ -30,13 +29,18 @@ export function deductBalance(key, amount) {
   });
 }
 
+// filter.js
+
 // 检查当前余额是否足够
 export function checkBalance(key, text) {
-  return client.get(key, (err, balance) => {
-    if (err) {
-      return false;
-    }
-    return balance >= countBytes(text);
+  return new Promise((resolve, reject) => {
+    client.get(key, (err, balance) => {
+      if (err) {
+        reject(false);  // Reject the promise if there's an error
+      } else {
+        resolve(balance >= countBytes(text));  // Resolve with the comparison result
+      }
+    });
   });
 }
 
