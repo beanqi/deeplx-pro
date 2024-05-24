@@ -6,6 +6,8 @@ const client = new Redis(redisServer);
 
 // 初始化余额并设置过期时间为31天
 export function initBalance(key, balance) {
+  console.log("initBalance", key, balance)
+  console.log(redisServer)
   return client.set(key, balance, 'EX', 2678400);
 }
 
