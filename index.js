@@ -173,9 +173,6 @@ app.get("/addkey", async (req, res) => {
 
   // Initialize the balance using the function from 'filter.js'
   const result = await initBalance(key, balance);
-  if (!result) {
-    return res.status(500).json({ error: "Failed to add key"+result });
-  }
   
   cookiesCount = cookies.length; // Update the cookies count
   res.json({ message: "Key added successfully" });
