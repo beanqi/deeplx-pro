@@ -1,6 +1,7 @@
 import axios from 'axios';
 import express from 'express';
 import bodyParser from 'body-parser';
+import { Analytics } from "@vercel/analytics/react"
 import { initBalance, checkBalance, deductBalance } from './filter.js';
 
 const DEEPL_BASE_URL = 'https://api.deepl.com/jsonrpc';
