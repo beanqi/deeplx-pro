@@ -1,47 +1,41 @@
-import Redis from "ioredis";
+import { createClient } from 'redis';
 
 const redisServer = process.env.KV_URL || "redis://127.0.0.1:6379";
 
-const client = new Redis(redisServer);
+const client = createClient({
+  url: redisServer
+});
+
+client.connect();
 
 // 初始化余额并设置过期时间为31天
 export function initBalance(key, balance) {
   console.log("initBalance", key, balance)
   console.log(redisServer)
-  return client.set(key, balance, 'EX', 2678400);
+  return client.setEx(key, 2678400, balance);
 }
 
 // 获取余额
 export function getBalance(key) {
-  return client.get(key, (err, balance) => {
-    if (err) {
-      return false;
-    }
-    return balance;
-  });
+  return client.get(key).then(balance => balance).catch(() => false);
 }
 
 // 扣除余额
 export function deductBalance(key, amount) {
-  return client.decrby(key, amount, (err, balance) => {
-    if (err) {
-      return false;
-    }
-    return balance;
-  });
+  return client.decrBy(key, amount).then(balance => balance).catch(() => false);
 }
-
-// filter.js
 
 // 检查当前余额是否足够
 export function checkBalance(key, text) {
   return new Promise((resolve, reject) => {
-    client.get(key, (err, balance) => {
-      if (err) {
-        reject(false);  // Reject the promise if there's an error
+    client.get(key).then(balance => {
+      if (balance >= countBytes(text)) {
+        resolve(true);
       } else {
-        resolve(balance >= countBytes(text));  // Resolve with the comparison result
+        resolve(false);
       }
+    }).catch(() => {
+      reject(false);
     });
   });
 }
