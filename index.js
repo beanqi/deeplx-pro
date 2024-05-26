@@ -1,13 +1,13 @@
 const axios = require('axios').default;
 const express = require('express');
 const bodyParser = require('body-parser');
-
+const { sendRequest } = require('./ip'); // 引入 sendRequest 方法
 const DEEPL_BASE_URL = 'https://api.deepl.com/jsonrpc';
 const app = express();
 const PORT = process.env.PORT || 9000;
 
 // Cookies storage
-let cookies = process.env.DEEPL_COOKIES ? process.env.DEEPL_COOKIES.split(',') : [];
+let cookies = process.env.DEEPL_COOKIES ? process.env.DEEPL_COOKIES.split(',') : ['95d84682-f9ac-4b15-b7e5-3dd495de1eb7'];
 
 let cookiesCount = cookies.length; // 有效cookie的数量
 let invalidCookies = []; // 失效cookie的数组
@@ -95,7 +95,7 @@ async function translate(text, sourceLang = 'AUTO', targetLang = 'ZH', numberAlt
   };
 
   try {
-    const response = await axios.post(DEEPL_BASE_URL, JSON.stringify(postData), { headers });
+    const response = await sendRequest(DEEPL_BASE_URL, JSON.stringify(postData), headers);
     if (response.status !== 200) {
       console.error('Error', response.status);
       return null;
